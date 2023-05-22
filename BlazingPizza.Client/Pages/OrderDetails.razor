@@ -1,0 +1,50 @@
+﻿@page "/myorders/{orderId:int}"
+@inject HttpClient http;
+
+<h3>OrderDetail of @orderId</h3>
+
+
+
+@code {
+    [Parameter] public int orderId { get; set; }
+
+    public OrderWithStatus orderWithStatus;
+    bool invalidOrder;
+    CancellationTokenSource pollingCancellationToken;
+
+    protected override async Task OnParametersSetAsync()
+    {
+
+    }
+
+    private async void PollForUpdates()
+    {
+        pollingCancellationToken = new CancellationTokenSource();
+        while (!pollingCancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                invalidOrder = false;
+                orderWithStatus = await http.GetFromJsonAsync<OrderWithStatus>($"orders/{orderId}");
+                StateHasChanged();
+
+                if (orderWithStatus.IsDelivered)
+                {
+                    pollingCancellationToken.Cancel();
+                }
+                else
+                {
+                    await Task.Delay(4000);
+                }
+            }
+            catch (Exception ex)
+            {
+                invalidOrder = true;
+                pollingCancellationToken.Cancel();
+                Console.Error.WriteLine(ex);
+                StateHasChanged();
+            }
+        }
+
+    }
+}

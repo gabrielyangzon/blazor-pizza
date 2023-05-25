@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject HttpClient http;
-
+@inject OrderState OrderState
+@inject NavigationManager NavigationManager;
 
 
 <div class="main">
@@ -98,8 +99,11 @@
 
     async Task PlaceOrder()
     {
-        await http.PostAsJsonAsync("orders", order);
+        var response = await http.PostAsJsonAsync("orders", order);
+        var newOrderId = await response.Content.ReadFromJsonAsync<int>();
         order = new Order();
+
+        NavigationManager.NavigateTo($"myorders/{newOrderId}");
     }
 
 
